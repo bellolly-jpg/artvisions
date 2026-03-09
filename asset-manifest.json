@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/artvisions/static/css/main.e6c13ad2.css",
+    "main.js": "/artvisions/static/js/main.31187fe7.js",
+    "static/js/453.f4007b5d.chunk.js": "/artvisions/static/js/453.f4007b5d.chunk.js",
+    "index.html": "/artvisions/index.html",
+    "main.e6c13ad2.css.map": "/artvisions/static/css/main.e6c13ad2.css.map",
+    "main.31187fe7.js.map": "/artvisions/static/js/main.31187fe7.js.map",
+    "453.f4007b5d.chunk.js.map": "/artvisions/static/js/453.f4007b5d.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.31187fe7.js"
+  ]
+}

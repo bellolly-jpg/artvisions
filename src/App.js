@@ -5,7 +5,7 @@ const BG = "#0D0D0D";
 const CARD = "#161616";
 const BORDER = "#2a2a2a";
 
-const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_KEY;
+
 
 const systemPrompt = `You are an expert art historian and curator with deep knowledge of all art movements, artists, and techniques. When shown an artwork image, analyze it comprehensively and return ONLY valid JSON (no markdown, no backticks, no extra text) in this exact structure:
 
@@ -66,7 +66,7 @@ export default function ArtScanner() {
     setError(null);
     try {
       const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `artvisions-proxy.bellolly.workers.dev`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

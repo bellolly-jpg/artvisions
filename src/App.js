@@ -5,6 +5,8 @@ const BG = "#0D0D0D";
 const CARD = "#161616";
 const BORDER = "#2a2a2a";
 
+const GEMINI_API_KEY = "AIzaSyC5bwBwkIRyzfvIKq4TZrsAkj5dtTeB0bU "; // Replace with your key from aistudio.google.com
+
 const systemPrompt = `You are an expert art historian and curator with deep knowledge of all art movements, artists, and techniques. When shown an artwork image, analyze it comprehensively and return ONLY valid JSON (no markdown, no backticks, no extra text) in this exact structure:
 
 {
@@ -63,29 +65,31 @@ export default function ArtScanner() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: systemPrompt,
-          messages: [{
-            role: "user",
-            content: [
-              { type: "image", source: { type: "base64", media_type: "image/jpeg", data: imageBase64 } },
-              { type: "text", text: "Analyze this artwork and return the JSON." }
-            ]
-          }]
-        })
-      });
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: systemPrompt + "\n\nAnalyze this artwork and return the JSON." },
+                { inline_data: { mime_type: "image/jpeg", data: imageBase64 } }
+              ]
+            }],
+            generationConfig: { temperature: 0.4, maxOutputTokens: 2000 }
+          })
+        }
+      );
       const data = await response.json();
-      const text = data.content?.map(b => b.text || "").join("").trim();
+      if (data.error) throw new Error(data.error.message);
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      if (!text) throw new Error("No response from Gemini");
       const clean = text.replace(/```json|```/g, "").trim();
       const parsed = JSON.parse(clean);
       setAnalysis(parsed);
     } catch (err) {
-      setError("Could not analyze artwork. Please try another image.");
+      setError("Could not analyze artwork. Please try another image. " + err.message);
     } finally {
       setLoading(false);
     }
@@ -181,9 +185,7 @@ export default function ArtScanner() {
                 </div>
                 {error && <div style={{ color: "#e07070", fontFamily: "'Crimson Text', serif", marginBottom: 16, fontSize: "0.95rem" }}>{error}</div>}
                 <button className="analyze-btn" onClick={analyzeArt} disabled={loading}>
-                  {loading ? (
-                    <span className="pulse">Analysing Artwork…</span>
-                  ) : "Analyse Artwork"}
+                  {loading ? <span className="pulse">Analysing Artwork…</span> : "Analyse Artwork"}
                 </button>
               </div>
             )}
@@ -198,13 +200,9 @@ export default function ArtScanner() {
               {/* Left Column */}
               <div>
                 <img src={image} alt="Artwork" style={{ width: "100%", border: `1px solid ${BORDER}`, marginBottom: 16 }} />
-
-                {/* Tags */}
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
                   {analysis.tags?.map((t, i) => <span key={i} className="tag">{t}</span>)}
                 </div>
-
-                {/* Colour Palette */}
                 <div className="card">
                   <div className="section-title">Colour Palette</div>
                   <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
@@ -229,13 +227,10 @@ export default function ArtScanner() {
 
               {/* Right Column */}
               <div>
-                {/* Title & Meta */}
                 <div style={{ marginBottom: 28 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
                     <span className="tag">{analysis.movement}</span>
-                    {analysis.confidence && <span style={{ fontSize: "0.7rem", color: "#555", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-                      {analysis.confidence} confidence
-                    </span>}
+                    {analysis.confidence && <span style={{ fontSize: "0.7rem", color: "#555", letterSpacing: "0.1em", textTransform: "uppercase" }}>{analysis.confidence} confidence</span>}
                   </div>
                   <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(1.6rem,3vw,2.4rem)", fontWeight: 700, color: "#f0e8dc", margin: "8px 0 4px", lineHeight: 1.2 }}>
                     {analysis.title}
@@ -248,23 +243,16 @@ export default function ArtScanner() {
                   </div>
                 </div>
 
-                {/* Description */}
                 <div className="card">
                   <div className="section-title">About This Work</div>
-                  <p style={{ fontFamily: "'Crimson Text', serif", fontSize: "1.05rem", lineHeight: 1.8, color: "#b8b0a5", margin: 0 }}>
-                    {analysis.description}
-                  </p>
+                  <p style={{ fontFamily: "'Crimson Text', serif", fontSize: "1.05rem", lineHeight: 1.8, color: "#b8b0a5", margin: 0 }}>{analysis.description}</p>
                 </div>
 
-                {/* Artist */}
                 <div className="card">
                   <div className="section-title">About the Artist</div>
-                  <p style={{ fontFamily: "'Crimson Text', serif", fontSize: "1.05rem", lineHeight: 1.8, color: "#b8b0a5", margin: 0 }}>
-                    {analysis.artistBio}
-                  </p>
+                  <p style={{ fontFamily: "'Crimson Text', serif", fontSize: "1.05rem", lineHeight: 1.8, color: "#b8b0a5", margin: 0 }}>{analysis.artistBio}</p>
                 </div>
 
-                {/* Technique & Symbolism */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
                   <div className="card" style={{ margin: 0 }}>
                     <div className="section-title">Technique</div>
@@ -276,7 +264,6 @@ export default function ArtScanner() {
                   </div>
                 </div>
 
-                {/* Fun Facts */}
                 {analysis.funFacts?.length > 0 && (
                   <div className="card">
                     <div className="section-title">Fascinating Facts</div>
@@ -286,7 +273,6 @@ export default function ArtScanner() {
                   </div>
                 )}
 
-                {/* Similar Artworks */}
                 {analysis.similarArtworks?.length > 0 && (
                   <div className="card">
                     <div className="section-title">Similar Artworks</div>
@@ -310,7 +296,7 @@ export default function ArtScanner() {
       {/* Footer */}
       <div style={{ borderTop: `1px solid ${BORDER}`, padding: "20px 40px", textAlign: "center", marginTop: 40 }}>
         <span style={{ fontSize: "0.72rem", color: "#444", letterSpacing: "0.2em", textTransform: "uppercase" }}>
-          Powered by Claude AI Vision · Artvision
+          Powered by Google Gemini · Artvision
         </span>
       </div>
     </div>
